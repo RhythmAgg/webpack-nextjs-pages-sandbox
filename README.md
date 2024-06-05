@@ -1,40 +1,14 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# FTI Project - Webpack Bundling Sandbox
+This sandbox is used to test and analyze the working of next build process and find solutions to the issues faced regarding tree shaking employed by bundlers like webpack.
 
-## Getting Started
+The project is implemented using Pages router in order to keep the sandbox closer to the actual projects the developers work on.
 
-First, run the development server:
+The current sandbox contains modules with both direct exports as well as an internal barrel-package to test barrel exports. The configuration has been modified to include bundle-analyzer.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+A nodeJS script `side-effects-analyzer.mjs` is used to evaluate package modules for side effects and add them to the sideEffects array in package.json. The script utilize `acorn` library for parsing the modules and traversing their AST for finding side effects in the module scope. The current side effects detected are;
+- Function calls
+- Expressions like console.logs()
+- Variable declarations like objects, literals and (Arrow)functions
+- Assignment operations
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+The script currently evaluates only JS modules and considers JSON files as side Effect modules by default.

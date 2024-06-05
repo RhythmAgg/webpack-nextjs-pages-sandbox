@@ -1,7 +1,10 @@
 import {debounce}  from "lodash"
 import Image from "next/image"
 
-console.log('hi')
+// console.log('hi')
+// const obj = {
+//     x: 5
+// }
 
 
 export default function Test3() {

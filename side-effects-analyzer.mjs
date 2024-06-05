@@ -22,27 +22,41 @@ async function getFiles(dir) {
 async function hasSideEffects(code, filePath) {
     return new Promise((resolve, reject) => {
         try {
+            if(filePath.includes('.json')) { // Include JSON files since they always introduce Side Effects when imported
+                resolve(true)
+            }
+            if(filePath.includes('.ts') || filePath.includes('.tsx')) { // Ignore Typescript files as of now
+                resolve(false)
+            }
             const ast = MyParser.parse(code, { sourceType: 'module' , ecmaVersion: "latest"});
-            // console.log(ast)
     
             function traverse(node) {
-                // console.log(node)
                 if (node.type === 'CallExpression' || node.type === 'AssignmentExpression') {
                     return true; 
                 }
-                if (node.type === 'ExpressionStatement') {
+                else if (node.type === 'ExpressionStatement') {
                     return traverse(node.expression);
                 }
-                if (node.type === 'BlockStatement' || node.type === 'Program') {
+                else if (node.type === 'BlockStatement' || node.type === 'Program') {
                     for (const childNode of node.body) {
                         if (traverse(childNode)) {
                             return true;
                         }
                     }
                 }
+                else if(node.type === 'VariableDeclaration') {
+                    for (const declaration of node.declarations) {
+                        // console.log(declaration.init)
+                        if (traverse(declaration.init)) {
+                            return true;
+                        }
+                    }
+                }
+                if(['FunctionExpression', 'ArrowFunctionExpression', 'Literal', 'ObjectExpression'].includes(node.type)) { // Currenly mark even Function expressions as side Effects if not exported
+                    return true;
+                }
                 return false;
             }
-    
             resolve(traverse(ast));
         } catch (error) {
             console.error(`Error parsing file ${filePath}:`, error.message);
