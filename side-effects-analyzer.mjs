@@ -3,6 +3,7 @@ import jsx from 'acorn-jsx'
 import {promises as fs} from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { parse } from '@typescript-eslint/typescript-estree';
 const script_filename = fileURLToPath(import.meta.url); 
 const PROJECT_DIRECTORY = path.dirname(script_filename);
 const PAGES = path.resolve(PROJECT_DIRECTORY, 'pages')
@@ -25,10 +26,10 @@ async function hasSideEffects(code, filePath) {
             if(filePath.includes('.json')) { // Include JSON files since they always introduce Side Effects when imported
                 resolve(true)
             }
-            if(filePath.includes('.ts') || filePath.includes('.tsx')) { // Ignore Typescript files as of now
-                resolve(false)
-            }
-            const ast = MyParser.parse(code, { sourceType: 'module' , ecmaVersion: "latest"});
+            const ast = parse(code, {
+                comment: true,
+                jsx: true
+            });
     
             function traverse(node) {
                 if (node.type === 'CallExpression' || node.type === 'AssignmentExpression') {
@@ -63,7 +64,9 @@ async function hasSideEffects(code, filePath) {
             resolve(false); 
         }
     })
+    
 }
+
 
 const files = await getFiles(PAGES)
                 .then(files => {
