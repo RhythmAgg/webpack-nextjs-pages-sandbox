@@ -7,6 +7,7 @@ import { parse } from '@typescript-eslint/typescript-estree';
 const script_filename = fileURLToPath(import.meta.url); 
 const PROJECT_DIRECTORY = path.dirname(script_filename);
 const PAGES = path.resolve(PROJECT_DIRECTORY, 'pages')
+// const PAGES = path.resolve(PROJECT_DIRECTORY, 'test')
 
 const MyParser = Parser.extend(jsx())
 
@@ -31,32 +32,71 @@ async function hasSideEffects(code, filePath) {
                 jsx: true
             });
     
-            function traverse(node) {
-                if (node.type === 'CallExpression' || node.type === 'AssignmentExpression') {
-                    return true; 
-                }
-                else if (node.type === 'ExpressionStatement') {
-                    return traverse(node.expression);
-                }
-                else if (node.type === 'BlockStatement' || node.type === 'Program') {
-                    for (const childNode of node.body) {
-                        if (traverse(childNode)) {
+            function traverse(node, left = false) {
+                switch(node.type) {
+                    case 'CallExpression':
+                        // TODO: Decide if the Call expression is to be marked with /*#__PURE__*/ if pure
+                        return true;
+                    case 'AssignmentExpression':
+                        // Check for global assignments
+                        if (node.left.type === 'MemberExpression' && (node.left.object.name === 'window' || node.left.object.name === 'document')) {
                             return true;
                         }
-                    }
-                }
-                else if(node.type === 'VariableDeclaration') {
-                    for (const declaration of node.declarations) {
-                        // console.log(declaration.init)
-                        if (traverse(declaration.init)) {
-                            return true;
+
+                        return traverse(node.left, left=true) || traverse(node.right, left = false);
+                    case 'MemberExpression':
+                        console.log(node)
+                        if(left && (node.object.name === 'window' || node.object.name === 'document')) {
+                            return true
+                        }else if(left) {
+                            return traverse(node.object, left = true)
+                        }else {
+                            return false
                         }
-                    }
+                    case 'ExpressionStatement':
+                        // Expressions depend on the type of expressions
+                        return traverse(node.expression, left);
+
+                    case 'BlockStatement':
+                    case 'Program':
+                        // Analyse each node
+                        for (const childNode of node.body) {
+                            if (traverse(childNode, left)) {
+                                return true;
+                            }
+                        }
+                        return false
+                    case 'VariableDeclaration':
+                        // For each declaration if the init is a Call expression or a side effect
+                        for (const declaration of node.declarations) {
+                            if (traverse(declaration.init, left)) {
+                                return true;
+                            }
+                        }
+                        return false
+                    case 'IfStatement':
+                        return traverse(node.test, left) || traverse(node.consequent, left) || traverse(node.alternate, left);
+
+                    case 'WhileStatement':
+                    case 'ForStatement':
+                        return traverse(node.test, left) || traverse(node.body, left);
+
+                    case 'ReturnStatement':
+                        return traverse(node.argument, left);
+
+                    case 'TryStatement':
+                        return traverse(node.block, left) || traverse(node.handler, left) || traverse(node.finalizer, left);
+
+                    case 'CatchClause':
+                        return traverse(node.param, left) || traverse(node.body, left);
+
+                    case 'ObjectExpression':
+                    case 'ArrayExpression':
+                    case 'Literal':
+                        return false;
+                    default:
+                        return false
                 }
-                if(['FunctionExpression', 'ArrowFunctionExpression', 'Literal', 'ObjectExpression'].includes(node.type)) { // Currenly mark even Function expressions as side Effects if not exported
-                    return true;
-                }
-                return false;
             }
             resolve(traverse(ast));
         } catch (error) {

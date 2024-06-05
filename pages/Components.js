@@ -104,6 +104,7 @@ export function Cube() {
 
 export function Rectangle() {
     return (
-      <h1>This is rectangle</h1>
+      // <h1>This is rectangle</h1>
+      <Test3 />
     )
 }
