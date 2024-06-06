@@ -11,6 +11,7 @@
     "analyze": "ANALYZE=true npm run build"
   },
   "dependencies": {
+    "@babel/parser": "^7.24.7",
     "@next/bundle-analyzer": "^14.2.3",
     "acorn": "^8.11.3",
     "fs": "^0.0.1-security",

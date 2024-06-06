@@ -12,6 +12,7 @@ function Call() {
 // const x = Call()
 
 // export { x }
+export const x = /*#__PURE__*/ Call()
 
 export default function Test3() {
     return <h1>Test 3</h1>
